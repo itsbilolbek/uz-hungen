@@ -78,8 +78,11 @@ Agar bir so‘zga bir nechta TAG berilishi kerak bo‘lsa, teglar vergul bilan a
 Misol:
 
 olma/OT
+
 kitob/OT
+
 yaxshi/OT,SIFAT
+
 va
 
 So‘zlar kichik harflar bilan yoziladi. Agar so‘zda katta harflar ham mavjud bo‘lsa (masalan birinchi harf) ushbu register Hunspell orqali tekshirilganda ham huddi shunday holda yozilsagina to‘g‘ri hisoblanadi. Bu asosan atoqli nomlarni yozishda ishlatiladi. Masalan, "o‘zbekiston" deb yozilgan so‘z "o‘zbekiston" shaklida yozilganda Hunspell uni noto‘g‘ri hisoblaydi.
