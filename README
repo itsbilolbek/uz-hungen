@@ -1,10 +1,13 @@
-[O‘zbek tili uchun Hunspell lug‘atlarini hosil qilish uchun qoidalar to‘plami]
+# O‘zbek tili uchun Hunspell lug‘atlarini hosil qilish uchun qoidalar to‘plami
 
+Qo‘shimchalar turlari va ularni qay tartibda kelishi \Affixes\*.qoida fayllarida, so‘zlarning ro‘yxati esa \Dictionaries\*.txt fayllarda beriladi.
+Hunspell lug‘atlarini hosil qilish uchun:
+```
+uzhungen.exe -s .\Affixes\*.qoida -d .\Dictionaries\*.txt
+```
 
-Qo‘shimchalar turlari va ularni qay tartibda kelishi alohida fayllarda, so‘zlarni ro‘yxati esa alohida fayllarda beriladi.
+## Qoidalar fayli
 
-Qoidalar fayli
-==============
 Qo‘shimchalar to‘plamini berish uchun SFX bloki ishlatiladi. Bitta guruhga oid qo‘shimchalar (masalan, kelishik, egalik qo‘shimchalari) bir blok ostida kiritiladi. Sintaksis:
 
 SFX <Qo‘SHIMCHA_GURUHI>
@@ -67,8 +70,7 @@ Ichida hech qanday ketma-ketlik yozilmagan teg ham to‘g‘ri hisoblanadi. Bund
 
 Fayl ichida izohlardan foydalanish mumkin. Izoh # belgisi bilan boshlanadi va qayerda ushbu qo‘yilishidan qat’i nazar qator oxirigacha amal qiladi. Ya’ni # belgisidan to shu qator oxirigacha izoh hisoblanadi.
 
-So‘zlar fayli
-=============
+## So‘zlar fayli
 
 So‘zlar har bir qatorga alohida qilib kiritiladi. So‘zdan keyin "/" belgisi va undan keyin qoida faylidagi biror TAG nomi berilishi mumkin.
 Agar bir so‘zga bir nechta TAG berilishi kerak bo‘lsa, teglar vergul bilan ajratib yoziladi. Yoki so‘zga hech qanday teg bermaslik uchun so‘zdan keyin hech narsa yozilmaydi. 
