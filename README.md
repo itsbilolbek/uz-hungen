@@ -14,7 +14,7 @@ Qo‘shimchalar to‘plamini berish uchun SFX bloki ishlatiladi. Bitta guruhga o
 ```
 SFX <Qo‘SHIMCHA_GURUHI>
 	
-	<Qo‘SHIMCHA_NOMI> = "<Qo‘SHIMCHA>" [ENDSWITH "<REGEX>" [STRIP [<QIRQILADIGAN_BELGI>]]]
+	<Qo‘SHIMCHA_NOMI> = "<Qo‘SHIMCHA>" [ENDSWITH "<REGEX_IFODA>" [STRIP [<QIRQILADIGAN_BELGI>]]]
 	...
 
 END SFX
@@ -27,9 +27,9 @@ Sintaksisda berilgan to‘rtburchak qavs ichidagi buyruqlar majburiy emas, tushi
 
 <Qo‘SHIMCHA> - Qo‘shimchaning o‘zi, masalan "ning".
 
-ENDSWITH "<REGEX>" - Bu qo‘shimchalar guruhidan oldingan qo‘shimcha yoki o‘zak so‘zning qaysi harf bilan tugashini tekshirish buyrug‘i. 
+ENDSWITH "<REGEX_IFODA>" - Bu qo‘shimchalar guruhidan oldingan qo‘shimcha yoki o‘zak so‘zning qaysi harf bilan tugashini tekshirish buyrug‘i. 
 
-<REGEX> - soddalashtirilgan qolipli ifoda. To‘plam ([]), ihtiyoriy belgi (.) va inkor buyruqlaridan (^) foydalanish mumkin xolos. Inkor faqat to‘plamni inkor etadi va [^abs] shaklida beriladi. Ya’ni [^abs] bu oxirgi harf "a" ham emas, "b" ham emas, "s" ham emas bo‘lsa degan shartni berish uchun ishlaydi.
+<REGEX_IFODA> - soddalashtirilgan qolipli ifoda. To‘plam ([]), ihtiyoriy belgi (.) va inkor buyruqlaridan (^) foydalanish mumkin xolos. Inkor faqat to‘plamni inkor etadi va [^abs] shaklida beriladi. Ya’ni [^abs] bu oxirgi harf "a" ham emas, "b" ham emas, "s" ham emas bo‘lsa degan shartni berish uchun ishlaydi.
 
 STRIP <QIRQILADIGAN_BELGI> - So‘z oxiridan qirqiladigan harf(lar)ni berish buyrug‘i. Agar qirqiladigan belgi berilmasa harflar avtomat qirqiladi (qolipli ifodaga mos tarzda)
 
