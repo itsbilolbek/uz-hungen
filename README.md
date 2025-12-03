@@ -20,11 +20,17 @@ SFX <Qo‘SHIMCHA_GURUHI>
 END SFX
 ```
 Sintaksisda berilgan to‘rtburchak qavs ichidagi buyruqlar majburiy emas, tushirib qoldirilishi mumkin.
+
 <Qo‘SHIMCHA_GURUHI> - Qo‘shimchalar guruhining nomi, masalan EGALIK. TAG blokida qo‘shimchalar ketma-ketliklarni berishda ishlatiladi.
+
 <Qo‘SHIMCHA_NOMI> - Qo‘shimchaning nomi, masalan 1-SHAXS BIRLIK.
+
 <Qo‘SHIMCHA> - Qo‘shimchaning o‘zi, masalan "ning".
+
 ENDSWITH "<REGEX>" - Bu qo‘shimchalar guruhidan oldingan qo‘shimcha yoki o‘zak so‘zning qaysi harf bilan tugashini tekshirish buyrug‘i. 
+
 <REGEX> - soddalashtirilgan qolipli ifoda. To‘plam ([]), ihtiyoriy belgi (.) va inkor buyruqlaridan (^) foydalanish mumkin xolos. Inkor faqat to‘plamni inkor etadi va [^abs] shaklida beriladi. Ya’ni [^abs] bu oxirgi harf "a" ham emas, "b" ham emas, "s" ham emas bo‘lsa degan shartni berish uchun ishlaydi.
+
 STRIP <QIRQILADIGAN_BELGI> - So‘z oxiridan qirqiladigan harf(lar)ni berish buyrug‘i. Agar qirqiladigan belgi berilmasa harflar avtomat qirqiladi (qolipli ifodaga mos tarzda)
 
 Misol:
@@ -57,6 +63,7 @@ TAG <TURKUM_NOMI>
 END TAG
 ```
 <QOIDA_NOMI> - Morfologik ma’lumot sifatida ishlatish mumkin.
+
 <Qo‘SHIMCHA_GURUHI_1>, <Qo‘SHIMCHA_GURUHI_2>, <Qo‘SHIMCHA_GURUHI_N> - Qo‘shimchalar guruhi nomlari. Bu guruhlar qaysi ketma-ketlikda kelishiga qarab qo‘shimchalar shunday tarzda qo‘shiladi. Qo‘shish ifodasida to‘rtburchak va shaklli qavslardan foydalanish mumkin. To‘rtburchak qavs ichida keladigan qo‘shimchalar guruhlari majburiy bo‘lmagan, tushib qolishi mumkin bo‘lgan qo‘shimchalarni, shaklli qavs ichida esa majburiy qo‘shimchalarni yozish mumkin.
 
 Misol:
