@@ -1,5 +1,4 @@
-﻿using System.Reflection.PortableExecutable;
-using System.Text;
+﻿using System.Text;
 
 namespace UzHunGen.Converter;
 
@@ -173,6 +172,7 @@ public class HunspellConverter
         }
     }
 
+    
     // SFX flaglarni yaratish
     private List<SFXFlag> CreateSFXFlags()
     {
@@ -394,8 +394,26 @@ public class HunspellConverter
         return newList;
     }
 
+    // Morfologik kodlarni aliaslarini yaratish
+    private Dictionary<string, AliasFlag> CreateMorphAliases(List<SFXFlag> sfxList)
+    {
+        var list = new Dictionary<string, AliasFlag>();
+        
+        var index = 0;
+
+        foreach (var sfx in sfxList)
+        {
+            foreach (var item in sfx.Lines)
+            {
+                if (!list.ContainsKey(item.MorphCode)) list.Add(item.MorphCode, new AliasFlag() { AliasIndex = ++index });
+            }
+        }
+
+        return list;
+    }
+
     // AFF fayl yaratish
-    private void WriteToAFFFile(List<SFXFlag> sfxList, Dictionary<string, AliasFlag> afList)
+    private void WriteToAFFFile(List<SFXFlag> sfxList, Dictionary<string, AliasFlag> afList, Dictionary<string, AliasFlag> morphList)
     {
 
         var sb = new StringBuilder();
@@ -420,6 +438,22 @@ public class HunspellConverter
         }
         sb.AppendLine();
 
+        // Morph aliaslarni faylga yozish
+        // AM <count>
+        // AM morphcode1 
+        // AM morphcode2
+        if (morphList.Count > 0 && _options.UseMorphCodes)
+        {
+            sb.AppendLine("AM " + morphList.Count);
+
+            foreach (var (key, entry) in morphList)
+            {
+                sb.AppendLine($"AM {key}");
+            }
+            sb.AppendLine();
+        }
+
+
         foreach (var sfx in sfxList)
         {
             sb.AppendLine($"# {sfx.TagName}{sfx.ClassName}/{sfx.SetName}{sfx.ClassName}" + (sfx.MorphCode.Length > 0 && !sfx.MorphCode.Equals("_") ? " : " + sfx.MorphCode : ""));
@@ -427,10 +461,13 @@ public class HunspellConverter
 
             foreach (var item in sfx.Lines)
             {
-                sb.AppendLine($"SFX {sfx.FlagName} {item.Strip} {item.Text} {item.Condition}");
+                var morphIndex = 0;
 
-                if (_options.UseMorphCodes) sb.Append($" {item.MorphCode}");
+                if (_options.UseMorphCodes && morphList.ContainsKey(item.MorphCode)) morphIndex = morphList[item.MorphCode].AliasIndex;
+
+                sb.AppendLine($"SFX {sfx.FlagName} {item.Strip} {item.Text} {item.Condition}" + (morphIndex > 0 ? $" {morphIndex}" : ""));
             }
+
             sb.AppendLine();
         }
 
@@ -473,15 +510,15 @@ public class HunspellConverter
 
     public void Convert()
     {
-
         var sfxList = CreateSFXFlags();
 
         var afList = CreateAliasFlags(sfxList);
 
-        WriteToAFFFile(sfxList, afList);
+        var morphList = CreateMorphAliases(sfxList);
+
+        WriteToAFFFile(sfxList, afList, morphList);
 
         WriteToDICFile(afList);
-
     }
 
 }
