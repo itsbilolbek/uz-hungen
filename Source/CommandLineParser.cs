@@ -13,7 +13,6 @@ public record AppSettings
 {
     public bool Use2FoldRefs { get; set; }
     public bool UseMorphCodes { get; set; }
-    public bool UseAliases { get; set; } = true;
     public bool UseSingleDic { get; set; }
     public FlagType FlagType { get; set; } = FlagType.Long;
     public bool ShowHelp { get; set; }
@@ -55,14 +54,6 @@ public class CommandLineParser
                         break;
                     case "j":
                         options.UseSingleDic = true;
-                        currentOption = null;
-                        break;
-                    case "a":
-                        options.UseAliases = true;
-                        currentOption = null;
-                        break;
-                    case "f":
-                        options.UseAliases = false;
                         currentOption = null;
                         break;
                     case "h" or "help":
@@ -134,8 +125,6 @@ public class CommandLineParser
         Console.WriteLine("Sozlamalar:");
         Console.WriteLine("  -s <files>     Qoida fayllarini yuklash");
         Console.WriteLine("  -d <files>     Lug'at fayllarini yuklash");
-        Console.WriteLine("  -a             DIC faylda Aliaslardan foydalanish");
-        Console.WriteLine("  -f             DIC faylda Flaglardan foydalanish");
         Console.WriteLine("  -r             AFF faylda ikkitalik havolalardan foydalanish");
         Console.WriteLine("  -m             AFF faylga morfologik ma'lumotlarni qo'shish");
         Console.WriteLine("  -p             Parsing natijalarini chiqarish");

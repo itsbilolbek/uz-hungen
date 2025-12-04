@@ -215,7 +215,7 @@ public class HunspellConverter
                             TagName = tagName,
                             SetName = item.SetName,
                             ClassName = item.Class,
-                            MorphCode = item.Name,
+                            MorphCode = item.MorphCode,
                             OnlyRoot = item.OnlyRoot
                         };
 
@@ -226,7 +226,8 @@ public class HunspellConverter
                     {
                         Text = item.Suffix,
                         Condition = item.Condition.RegexPattern.Length > 0 ? item.Condition.RegexPattern : ".",
-                        Strip = item.Condition.Strip.Length > 0 ? item.Condition.Strip : "0"
+                        Strip = item.Condition.Strip.Length > 0 ? item.Condition.Strip : "0",
+                        MorphCode = item.MorphCode
                     });
                 }
                 if (sfx.Lines.Count > 0) list.Add(sfx);
@@ -308,7 +309,7 @@ public class HunspellConverter
                             Suffix = suffix + item2.Suffix,
                             OnlyRoot = item1.OnlyRoot,
                             Class = item1.Class,
-                            MorphCode = $"{item1.MorphCode} {item2.MorphCode}",
+                            MorphCode = $"{item1.MorphCode}:{item2.MorphCode}",
                             Condition = item1.Condition
                         });
                     }
@@ -409,18 +410,15 @@ public class HunspellConverter
         // AF <count>
         // AF Flags1
         // AF Flags2
-        if (_options.UseAliases)
+        sb.AppendLine("AF " + afList.Count);
+
+        foreach (var (key, entry) in afList)
         {
-            sb.AppendLine("AF " + afList.Count);
+            sb.AppendLine($"AF {entry.TextFlags} # {entry.AliasIndex} {entry.TagName}");
 
-            foreach (var (key, entry) in afList)
-            {
-                sb.AppendLine($"AF {entry.TextFlags} # {entry.AliasIndex} {entry.TagName}");
-
-                if (_options.ShowGrammar) Console.WriteLine(entry.AliasIndex + ": " + entry.TagName + " = " + entry.TextFlags);
-            }
-            sb.AppendLine();
+            if (_options.ShowGrammar) Console.WriteLine(entry.AliasIndex + ": " + entry.TagName + " = " + entry.TextFlags);
         }
+        sb.AppendLine();
 
         foreach (var sfx in sfxList)
         {
@@ -430,6 +428,8 @@ public class HunspellConverter
             foreach (var item in sfx.Lines)
             {
                 sb.AppendLine($"SFX {sfx.FlagName} {item.Strip} {item.Text} {item.Condition}");
+
+                if (_options.UseMorphCodes) sb.Append($" {item.MorphCode}");
             }
             sb.AppendLine();
         }
@@ -453,15 +453,8 @@ public class HunspellConverter
                 {
                     if (aliasList.ContainsKey(tag))
                     {
-                        if (_options.UseAliases)
-                        {
-                            ff.Append(aliasList[tag].AliasIndex);
-                            ff.Append('/');
-                        }
-                        else
-                        {
-                            ff.Append(aliasList[tag].Flags);
-                        }
+                        ff.Append(aliasList[tag].AliasIndex);
+                        ff.Append('/');
                     }
                 }
                 var flags = ff.ToString();
