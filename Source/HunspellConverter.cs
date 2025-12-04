@@ -1,0 +1,491 @@
+﻿using System.Reflection.PortableExecutable;
+using System.Text;
+
+namespace UzHunGen.Converter;
+
+public record SFXFlagItem
+{
+    public string Text { get; set; } = "";
+    public string Condition { get; set; } = "";
+    public string Strip { get; set; } = "";
+    public string MorphCode { get; set; } = "";
+    public string NextFlag { get; set; } = "";
+}
+public record SFXFlag
+{
+    public string TagName { get; set; } = "";
+    public string SetName { get; set; } = "";
+    public string FlagName { get; set; } = "";
+    public string MorphCode { get; set; } = "";
+    public List<SFXFlagItem> Lines { get; set; } = new();
+    public string ClassName { get; set; } = "";
+    public bool OnlyRoot { get; set; } = false;
+}
+
+public record AliasFlagItem
+{
+    public string ClassName { get; set; } = "";
+    public string FlagName { get; set; } = "";
+    public string SetName { get; set; } = "";
+}
+public record AliasFlag
+{
+    public string TagName { get; set; } = "";
+    public List<AliasFlagItem> Flags { get; set; } = new();
+}
+
+public record TagAliasMap
+{
+    public string TagName { get; set; } = "";
+    public string ClassName { get; set; } = "";
+    public int AliasIndex { get; set; } = 0;
+    public string Flags { get; set; } = "";
+}
+
+public class HunspellConverter
+{
+    public static int _uniqueId = 0;
+
+    private AppSettings _options = new();
+
+    private SuffixGrammar _grammar = new();
+
+    public HunspellConverter(AppSettings options)
+    {
+        _options = options;
+
+        AddRuleFiles(_options.RuleFiles);
+
+        AddDictionaryFiles(_options.DictionaryFiles);
+
+        ValidateTagReferences(_grammar);
+
+        PrintGrammar();
+    }
+
+    private void AddRuleFile(string file)
+    {
+        var input = File.ReadAllText(file, Encoding.UTF8);
+
+        var lexer = new RuleLexer(input);
+
+        var tokens = lexer.Tokenize();
+
+        var parser = new RuleParser(tokens);
+
+        var singleGrammar = parser.Parse();
+
+        foreach (var (key, value) in singleGrammar.Suffixes)
+        {
+            _grammar.Suffixes[key] = value;
+        }
+
+        foreach (var (key, value) in singleGrammar.Tags)
+        {
+            _grammar.Tags[key] = value;
+        }
+
+        Console.WriteLine($"- Qoidalar fayli yuklandi: {file}");
+    }
+
+    private void AddRuleFiles(List<string> files)
+    {
+        foreach (var file in files)
+        {
+            AddRuleFile(file);
+        }
+
+    }
+
+    private void AddDictionaryFile(string file)
+    {
+        string[] lines = File.ReadAllLines(file);
+
+        foreach (string line in lines)
+        {
+            var i = line.IndexOf('/');
+
+            if (i < 0)
+            {
+                _grammar.Words.Add(new WordElement() { Word = line });
+            }
+            else
+            {
+                _grammar.Words.Add(new WordElement() { Word = line.Substring(0, i), Tag = line.Substring(i + 1).Trim() });
+            }
+        }
+
+        Console.WriteLine($"- Lug'atlar fayli yuklandi: {file}");
+    }
+
+    private void AddDictionaryFiles(List<string> files)
+    {
+        foreach (var file in files)
+        {
+            AddDictionaryFile(file);
+        }
+    }
+
+    // Qo'shimchalar to'plamlari mavjudligini tekshirish
+    private static void ValidateTagReferences(SuffixGrammar grammar)
+    {
+        var missingSuffixes = grammar.Tags.Values
+            .SelectMany(tag => tag.Elements)
+            .SelectMany(element => element.Suffixes)
+            .Where(sfx => !grammar.Suffixes.ContainsKey(sfx))
+            .Distinct()
+            .ToList();
+
+        if (missingSuffixes.Count > 0)
+            throw new InvalidOperationException(
+                $"Quyidagi qo'shimchalar to'plami topilmadi: {string.Join(", ", missingSuffixes)}");
+    }
+
+    private void PrintGrammar()
+    {
+        if (_options.ShowGrammar)
+        {
+            foreach (var set in _grammar.Suffixes.Values)
+            {
+                Console.WriteLine($"\nSFX {set.Name}");
+
+                foreach (var item in set.Elements)
+                {
+                    Console.WriteLine($"   {item.Id}: {item.Name} \"{item.Suffix}\" (Shart: \"{item.Condition.RegexPattern}\" Qirqish: {item.Condition.Strip})");
+                }
+            }
+
+            foreach (var set in _grammar.Tags.Values)
+            {
+                Console.WriteLine($"\nTAG {set.Name}");
+
+                foreach (var element in set.Elements)
+                {
+                    Console.WriteLine("   " + string.Join(" + ", element.Suffixes));
+                }
+            }
+        }
+    }
+
+    // SFX flaglarni yaratish
+    private List<SFXFlag> CreateSFXFlags()
+    {
+        var lastId = 0;
+
+        var flag = 0;
+
+        var list = new List<SFXFlag>();
+
+        var tagName = "";
+
+        foreach (var tag in _grammar.Tags.Values)
+        {
+            tagName = tag.Name;
+
+            foreach (var tagItem in tag.Elements)
+            {
+                var result = new SuffixSet();
+
+                foreach (var suffix in tagItem.Suffixes)
+                {
+                    result = JoinSuffixSets(result, _grammar.Suffixes[suffix]);
+                }
+
+                lastId = 0;
+
+                var sfx = new SFXFlag();
+
+                foreach (var item in result.Elements)
+                {
+                    if (lastId != item.Id)
+                    {
+                        if (sfx.Lines.Count > 0) list.Add(sfx);
+
+                        flag++;
+
+                        sfx = new SFXFlag()
+                        {
+                            FlagName = Utils.CreateLongFlag(flag),
+                            TagName = tagName,
+                            SetName = item.SetName,
+                            ClassName = item.Class,
+                            MorphCode = item.Name,
+                            OnlyRoot = item.OnlyRoot
+                        };
+
+                        lastId = item.Id;
+                    }
+
+                    sfx.Lines.Add(new SFXFlagItem()
+                    {
+                        Text = item.Suffix,
+                        Condition = item.Condition.RegexPattern.Length > 0 ? item.Condition.RegexPattern : ".",
+                        Strip = item.Condition.Strip.Length > 0 ? item.Condition.Strip : "0"
+                    });
+                }
+                if (sfx.Lines.Count > 0) list.Add(sfx);
+
+            }
+        }
+
+        return list;
+
+    }
+
+    // Ikkita to'plamdagi qo'shimchalarni biriktirish
+    public static SuffixSet JoinSuffixSets(SuffixSet set1, SuffixSet set2)
+    {
+        var result = new SuffixSet();
+
+        var lastId = 0;
+
+        var lastId2 = 0;
+
+        if (set1.Elements.Count <= 0)
+        {
+            foreach (var item1 in set2.Elements)
+            {
+                //if (className.Length > 0 && !item1.Class.Equals(className)) continue;
+
+                if (item1.Id != lastId)
+                {
+                    lastId = item1.Id;
+                    _uniqueId++;
+                }
+
+                result.Elements.Add(item1 with { Id = _uniqueId });
+            }
+        }
+        else
+        {
+            foreach (var item1 in set1.Elements)
+            {
+                //if (className.Length > 0 && !item1.Class.Equals(className)) continue;
+
+                if (item1.Id != lastId2)
+                {
+                    lastId2 = item1.Id;
+                    _uniqueId++;
+                }
+                foreach (var item2 in set2.Elements)
+                {
+                    if (item2.Class.Length > 0) continue;
+
+                    if (Utils.SimpleRegexMatchEnd(item1.Suffix, item2.Condition.RegexPattern))
+                    {
+                        var suffix = item1.Suffix;
+
+                        if (item2.Condition.Strip.Equals("!"))
+                        {
+                            var length = Utils.SimpleRegexLength(item2.Condition.RegexPattern);
+                            if (length > 0)
+                                suffix = suffix.Substring(0, suffix.Length - length);
+                        }
+                        else if (item2.Condition.Strip.Length > 0)
+                        {
+                            suffix = suffix.Substring(0, suffix.Length - item2.Condition.Strip.Length);
+                        }
+
+                        if (item2.Suffix.Length == 0 || item2.OnlyRoot) continue;
+
+                        if (item2.Id != lastId)
+                        {
+                            lastId = item2.Id;
+                            _uniqueId++;
+                        }
+
+                        result.Elements.Add(new SuffixElement()
+                        {
+                            Id = _uniqueId,
+                            Name = $"{item1.Name}+{item2.Name}",
+                            SetName = item1.SetName,
+                            Suffix = suffix + item2.Suffix,
+                            OnlyRoot = item1.OnlyRoot,
+                            Class = item1.Class,
+                            MorphCode = $"{item1.MorphCode} {item2.MorphCode}",
+                            Condition = item1.Condition
+                        });
+                    }
+                }
+            }
+        }
+
+        return result;
+    }
+
+    // AF - alias flaglarini yaratish
+    private Dictionary<string, AliasFlag> CreateAliasFlags(List<SFXFlag> sfxList)
+    {
+        var tagAliases = new Dictionary<string, AliasFlag>();
+
+        foreach (var sfx in sfxList)
+        {
+            var s1 = sfx.TagName;
+
+            if (tagAliases.ContainsKey(s1))
+            {
+                tagAliases[s1].Flags.Add(new AliasFlagItem() { ClassName = sfx.ClassName, FlagName = sfx.FlagName, SetName = sfx.SetName });
+            }
+            else
+            {
+                var a = new AliasFlag();
+
+                a.TagName = s1;
+
+                a.Flags.Add(new AliasFlagItem() { ClassName = sfx.ClassName, FlagName = sfx.FlagName, SetName = sfx.SetName });
+
+                tagAliases.Add(s1, a);
+            }
+        }
+
+        return tagAliases;
+    }
+
+    // Tegga mos alias indekslari va uning flaglarini yaratish
+    private Dictionary<string, TagAliasMap> CreateClassAliasFlags(Dictionary<string, AliasFlag> mapFlags)
+    {
+        // Har bir entry uchun flags ni ClassName bo'yicha guruhlash
+        var sb = new StringBuilder();
+        
+        var tagAlias = new Dictionary<string, TagAliasMap>();
+        
+        var aliasIndex = 0;
+
+        foreach (var (key, entry) in mapFlags)
+        {
+            var groupedFlags = entry.Flags.GroupBy(f => f.ClassName);
+
+            foreach (var group in groupedFlags)
+            {
+                var className = group.Key;
+
+                sb.Clear();
+
+                var setName = "";
+                foreach (var f in group)
+                {
+                    sb.Append(f.FlagName);
+                    setName = f.SetName;
+                }
+
+                if (className.Length == 0)
+                {
+                    tagAlias.Add(entry.TagName, new TagAliasMap() { AliasIndex = ++aliasIndex, Flags = sb.ToString(), TagName = entry.TagName });
+                }
+                else
+                {
+                    var g = entry.Flags.Where(f => f.SetName != setName);
+                    foreach (var f in g)
+                    {
+                        sb.Append(f.FlagName);
+                    }
+
+                    tagAlias.Add(entry.TagName + className, new TagAliasMap() { AliasIndex = ++aliasIndex, ClassName = className, Flags = sb.ToString(), TagName = entry.TagName + className });
+                }
+            }
+        }
+
+        return tagAlias;
+    }
+
+    // AFF fayl yaratish
+    private void WriteToAFFFile(List<SFXFlag> sfxList, Dictionary<string, AliasFlag> mapFlags, Dictionary<string, TagAliasMap> tagAlias)
+    {
+
+        var sb = new StringBuilder();
+
+        sb.AppendLine("LANG uz_UZ");
+        sb.AppendLine("SET UTF-8");
+        sb.AppendLine("FLAG long");
+        sb.AppendLine("WORDCHARS -‘");
+        sb.AppendLine();
+
+        // Alias larni faylga yozish
+        // AF <count>
+        // AF Flags1
+        // AF Flags2
+        if (_options.UseAliases)
+        {
+            sb.AppendLine("AF " + tagAlias.Count);
+
+            foreach (var (key, entry) in tagAlias)
+            {
+                sb.AppendLine($"AF {entry.Flags} # {entry.AliasIndex} {entry.TagName}");
+
+                if (_options.ShowGrammar) Console.WriteLine(entry.AliasIndex + ": " + entry.TagName + " = " + entry.Flags);
+            }
+            sb.AppendLine();
+        }
+
+        foreach (var sfx in sfxList)
+        {
+            sb.AppendLine($"# {sfx.TagName}{sfx.ClassName}/{sfx.SetName}{sfx.ClassName}" + (sfx.MorphCode.Length > 0 && !sfx.MorphCode.Equals("_") ? " : " + sfx.MorphCode : ""));
+            sb.AppendLine($"SFX {sfx.FlagName} Y {sfx.Lines.Count}");
+
+            foreach (var item in sfx.Lines)
+            {
+                sb.AppendLine($"SFX {sfx.FlagName} {item.Strip} {item.Text} {item.Condition}");
+            }
+            sb.AppendLine();
+        }
+
+        File.WriteAllText(@".\Generated\uz.aff", sb.ToString());
+
+    }
+
+    // DIC fayl yaratish
+    private void WriteToDICFile(Dictionary<string, TagAliasMap> tagAliases)
+    {
+        var sb = new StringBuilder();
+
+        foreach (var word in _grammar.Words)
+        {
+            if (word.Tag.Length > 0)
+            {
+                var tags = word.Tag.Split("/");
+                var ff = new StringBuilder();
+                foreach (var tag in tags)
+                {
+                    if (tagAliases.ContainsKey(tag))
+                    {
+                        if (_options.UseAliases)
+                        {
+                            ff.Append(tagAliases[tag].AliasIndex);
+                            ff.Append('/');
+                        }
+                        else
+                        {
+                            ff.Append(tagAliases[tag].Flags);
+                        }
+                    }
+                }
+                var flags = ff.ToString();
+                if (flags.Length > 0) flags = flags.Substring(0, flags.Length - 1);
+                sb.AppendLine(word.Word + "/" + flags);
+            }
+            else
+            {
+                sb.AppendLine(word.Word);
+            }
+        }
+        sb.Insert(0, _grammar.Words.Count + "\n");
+
+        File.WriteAllText(@".\Generated\uz.dic", sb.ToString());
+    }
+
+    public void Convert()
+    {
+
+        var sfxList = CreateSFXFlags();
+
+        var mapFlags = CreateAliasFlags(sfxList);
+
+        var tagAliases = CreateClassAliasFlags(mapFlags);
+
+        WriteToAFFFile(sfxList, mapFlags, tagAliases);
+
+        WriteToDICFile(tagAliases);
+
+    }
+
+}
