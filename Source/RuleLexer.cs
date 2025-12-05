@@ -12,7 +12,7 @@ public enum TokenType
     NEWLINE, EOF
 }
 
-public record Token(TokenType Type, string Value, int Line, int Column)
+public record Token(TokenType Type, string Value, int Line, int Column, bool NewLine = false)
 {
     public override string ToString() => $"{Type}: {Value} ({Line}:{Column})";
 }
@@ -64,7 +64,6 @@ public class RuleLexer
         _input = input;
     }
 
-
     // Tokenlarga ajratish
     public List<Token> Tokenize()
     {
@@ -72,10 +71,6 @@ public class RuleLexer
 
         while (_position < _input.Length)
         {
-            SkipWhitespace();
-
-            if (_position >= _input.Length) break;
-
             var token = NextToken();
 
             if (token is not null) tokens.Add(token);
@@ -86,69 +81,34 @@ public class RuleLexer
         return tokens;
     }
 
+    private char CurrentChar() => _input[_position];
+
     // Keyingi token
     private Token? NextToken()
     {
         var startLine = _line;
         var startColumn = _column;
-        char current = _input[_position];
-
+    
         // Izohlar
-        if (current == '#')
-        {
-            SkipComment();
-            return null;
-        }
+        SkipWhitespace();
 
         // Maxsus belgilar
-        if (SingleCharTokens.TryGetValue(current, out var tokenType))
+        if (SingleCharTokens.TryGetValue(CurrentChar(), out var tokenType))
         {
             _position++;
             _column++;
-            return new Token(tokenType, current.ToString(), startLine, startColumn);
+            return new Token(tokenType, CurrentChar().ToString(), startLine, startColumn, SkipWhitespace());
         }
         
-        // Bo'sh qatorlar
-        if (current == '\n')
-        {
-            SkipNewlines();
-            return new Token(TokenType.NEWLINE, "\n", startLine, startColumn);
-        }
-
         // Mantli literallar
-        if (current == '"')
+        if (CurrentChar() == '"')
             return ReadString();
 
         // Identifikator va kalit so'zlar va sonlar
-        if (IsValidIdentifierSymbol(current))
+        if (IsValidIdentifierSymbol(CurrentChar()))
             return ReadIdentifier();
 
-        throw new InvalidOperationException($"Notog'ri belgi '{current}', qator nomeri => {_line}:{_column}");
-    }
-
-    // Bo'sh qatorlarni tashlab o'tish
-    private void SkipNewlines()
-    {
-        while (_position < _input.Length && char.IsWhiteSpace(_input[_position]))
-        {
-            if (_input[_position] == '\n')
-            {
-                _line++;
-                _column = 1;
-            }
-            else
-            {
-                _column++;
-            }
-            _position++;
-        }
-
-        while (_position < _input.Length && _input[_position] == '\n')
-        {
-            _position++;
-            _line++;
-            _column = 1;
-        }
+        throw new InvalidOperationException($"Notog'ri belgi '{CurrentChar()}', qator nomeri => {_line}:{_column}");
     }
 
     // Matnli literalni aniqlash
@@ -193,7 +153,7 @@ public class RuleLexer
         _position++; // Yopuvchi qo'shtirnoqni tashlab yuborish
         _column++;
 
-        return new Token(TokenType.STRING, sb.ToString(), startLine, startColumn);
+        return new Token(TokenType.STRING, sb.ToString(), startLine, startColumn, SkipWhitespace());
     }
 
 
@@ -204,7 +164,6 @@ public class RuleLexer
         var startLine = _line;
         var startColumn = _column;
         var sb = new StringBuilder();
-
        
         while (_position < _input.Length && IsValidIdentifierSymbol(_input[_position]))
         {
@@ -217,24 +176,47 @@ public class RuleLexer
 
         // Agar son bo'lsa
         if (int.TryParse(value, out _))
-            return new Token(TokenType.NUMBER, value, startLine, startColumn);
+            return new Token(TokenType.NUMBER, value, startLine, startColumn, SkipWhitespace());
 
         // Kalit so'z yoki identifikator
         var type = Keywords.TryGetValue(value.ToUpperInvariant(), out var keywordType)
             ? keywordType
             : TokenType.IDENTIFIER;
-        return new Token(type, value, startLine, startColumn);
+        
+        return new Token(type, value, startLine, startColumn, SkipWhitespace());
     }
 
     // Bo'sh joylarni tashlab o'tish
-    private void SkipWhitespace()
+    // Yangi qatorlar bo'lsa true qaytaradi
+    private bool SkipWhitespace()
     {
-        while (_position < _input.Length && char.IsWhiteSpace(_input[_position]))
+        var newLine = false;
+
+        while(true)
         {
-            if (_input[_position] == '\n') break;
-            _column++;
-            _position++;
+            while (_position < _input.Length && char.IsWhiteSpace(_input[_position]))
+            {
+                if (_input[_position] == '\n')
+                {
+                    newLine = true;
+                    _line++;
+                    _column = 1;
+                }
+                else
+                {
+                    _column++;
+                }
+                _position++;
+            }
+
+            if (_position >= _input.Length) break;
+
+            if (_input[_position] != '#') break;
+
+            SkipComment();
         }
+
+        return newLine;
     }
 
     // Izohlarni tashlab o'tish

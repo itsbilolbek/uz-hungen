@@ -103,11 +103,7 @@ public class RuleParser
 
         while (CurrentToken.Type != TokenType.EOF)
         {
-            if (CurrentToken.Type == TokenType.NEWLINE)
-            {
-                Consume(TokenType.NEWLINE);
-            }
-            else if (CurrentToken.Type == TokenType.SFX)
+            if (CurrentToken.Type == TokenType.SFX)
             {
                 var suffixSet = ParseSuffixSet();
 
@@ -136,30 +132,24 @@ public class RuleParser
         var name = Consume(TokenType.IDENTIFIER).Value;
         var morph = name;
 
-        // Qo'shimcha izohi
+        // Morfologik kod
         if (CurrentToken.Type == TokenType.COLON)
         {
             Consume(TokenType.COLON);
+
             morph = Consume(TokenType.STRING).Value;
         }
 
-        Consume(TokenType.NEWLINE);
-
         var elements = new List<SuffixElement>();
-
         var condition = new AffixCondition();
-
         var className = "";
-
         var onlyRoot = false;
-
         var hasClass = false;
 
         _uniqueId++;
 
         while (CurrentToken.Type != TokenType.END && CurrentToken.Type != TokenType.EOF)
         {
-
             if (CurrentToken.Type == TokenType.LBRACKET)
             {
                 Consume(TokenType.LBRACKET);
@@ -170,22 +160,25 @@ public class RuleParser
 
                     Consume(TokenType.CLASS);
 
+                    className = "";
+            
+                    onlyRoot = false;
+
                     if (CurrentToken.Type == TokenType.IDENTIFIER)
                     {
                         className = Consume(TokenType.IDENTIFIER).Value;
+                        
                         hasClass = true;
                     }
-                    else
-                        className = "";
 
                     if (CurrentToken.Type == TokenType.ONLYROOT)
                     {
                         Consume(TokenType.ONLYROOT);
+                        
                         onlyRoot = true;
-                    } else { onlyRoot = false; }
+                    }
 
                     Consume(TokenType.RBRACKET);
-                    Consume(TokenType.NEWLINE);
 
                     continue;
                 }
@@ -195,12 +188,10 @@ public class RuleParser
                 condition = new AffixCondition();
                 
                 condition.Type = AffixCondition.ConditionType.EndsWith;
-                
+
                 condition.RegexPattern = Consume(TokenType.STRING).Value;
 
-                if (condition.RegexPattern.Equals(".")) condition.RegexPattern = "";
-
-                // STRIP ni berish majburiy emas
+                // STRIP majburiy emas
                 if (CurrentToken.Type == TokenType.STRIP)
                 {
                     Consume(TokenType.STRIP);
@@ -212,19 +203,18 @@ public class RuleParser
                 }
                 
                 Consume(TokenType.RBRACKET);
-                Consume(TokenType.NEWLINE);
             }
 
-            var element = ParseSuffixElement();
-            element.Id = _uniqueId;
-            element.SetName = name;
-            element.Condition = condition;
-            element.OnlyRoot = onlyRoot;
-            element.Class = className;
-
-            elements.Add(element);
+            var element = ParseSuffixElement() with
+            {
+                Id = _uniqueId,
+                SetName = name,
+                Condition = condition,
+                OnlyRoot = onlyRoot,
+                Class = className
+            };
             
-            Consume(TokenType.NEWLINE);
+            elements.Add(element);
         }
 
         Consume(TokenType.END);
@@ -244,12 +234,11 @@ public class RuleParser
         var name = Consume(TokenType.IDENTIFIER).Value;
         var morph = name;
 
-        var elements = new List<SuffixElement>();
-
-        // Qo'shimcha izohi
+        // Morfologik kod
         if (CurrentToken.Type == TokenType.COLON)
         {
             Consume(TokenType.COLON);
+
             morph = Consume(TokenType.STRING).Value;
         }
 
@@ -271,25 +260,16 @@ public class RuleParser
 
         var name = Consume(TokenType.IDENTIFIER).Value;
         var morph = name;
-        var autoStrip = "";
 
-        // Qoida izohi
+        // Morfologik kod
         if (CurrentToken.Type == TokenType.COLON)
         {
             Consume(TokenType.COLON);
+
             morph = Consume(TokenType.STRING).Value;
         }
 
-        if (CurrentToken.Type == TokenType.STRIP)
-        {
-            Consume(TokenType.STRIP);
-            autoStrip = Consume(TokenType.STRING).Value;
-        }
-
-        Consume(TokenType.NEWLINE);
-
         var elements = new List<TagElement>();
-
         var condition = new AffixCondition();
 
         while (CurrentToken.Type != TokenType.END && CurrentToken.Type != TokenType.EOF)
@@ -307,10 +287,9 @@ public class RuleParser
 
                     condition.Type = AffixCondition.ConditionType.EndsWith;
                     condition.RegexPattern = Consume(TokenType.STRING).Value;
-                    if (condition.RegexPattern.Equals(".")) condition.RegexPattern = "";
                 }
 
-                // STRIP ni berish majburiy emas
+                // STRIP majburiy emas
                 if (CurrentToken.Type == TokenType.STRIP)
                 {
                     Consume(TokenType.STRIP);
@@ -322,14 +301,11 @@ public class RuleParser
                 }
 
                 Consume(TokenType.RBRACKET);
-                Consume(TokenType.NEWLINE);
             }
 
             var element = ParseTagElement(condition);
 
             elements.AddRange(element);
-
-            Consume(TokenType.NEWLINE);
         }
 
         Consume(TokenType.END);
@@ -348,21 +324,20 @@ public class RuleParser
         var name = Consume(TokenType.IDENTIFIER).Value;
         var morph = name;
 
-        var elements = new List<TagElement>();
-
-        // Qo'shimcha izohi
+        // Morfologik kod
         if (CurrentToken.Type == TokenType.COLON)
         {
             Consume(TokenType.COLON);
+
             morph = Consume(TokenType.STRING).Value;
         }
 
         Consume(TokenType.EQUAL);
 
         var expression = new List<TagAlternative>();
+        var elements = new List<TagElement>();
 
-
-        while (CurrentToken.Type != TokenType.NEWLINE && CurrentToken.Type != TokenType.EOF)
+        while (CurrentToken.Type != TokenType.EOF)
         {
             if (CurrentToken.Type == TokenType.IDENTIFIER)
             {
@@ -479,11 +454,13 @@ public class RuleParser
         return elements;
     }
 
-    private Token Consume(TokenType expectedType)
+    private Token Consume(TokenType expectedType, bool needNewLine = false)
     {
-        if (CurrentToken.Type != expectedType)
-            throw new InvalidOperationException($"{expectedType} berilishi kerak, biroq {CurrentToken.Type} berilgan, qator nomeri => {CurrentToken.Line}:{CurrentToken.Column}");
+        var current = CurrentToken;
 
-        return _tokens[_position++];
+        if (current.Type == expectedType && (!needNewLine || current.NewLine))
+            return _tokens[_position++];
+
+        throw new InvalidOperationException($"{expectedType} berilishi kerak, biroq {current.Type} berilgan, qator nomeri => {current.Line}:{current.Column}");
     }
 }
