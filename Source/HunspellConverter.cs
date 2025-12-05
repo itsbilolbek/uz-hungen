@@ -154,7 +154,7 @@ public class HunspellConverter
 
                 foreach (var item in set.Elements)
                 {
-                    Console.WriteLine($"   {item.Id}: {item.Name} \"{item.Suffix}\" (Shart: \"{item.Condition.RegexPattern}\" Qirqish: {item.Condition.Strip})");
+                    Console.WriteLine($"   {item.Id}: {item.Name} \"{item.Suffix}\" (Shart: \"{item.Condition.Pattern}\" Qirqish: {item.Condition.Strip})");
                 }
             }
 
@@ -225,7 +225,7 @@ public class HunspellConverter
                     sfx.Lines.Add(new SFXFlagItem()
                     {
                         Text = item.Suffix,
-                        Condition = item.Condition.RegexPattern,
+                        Condition = item.Condition.Pattern,
                         Strip = item.Condition.Strip,
                         MorphCode = item.MorphCode
                     });
@@ -281,7 +281,7 @@ public class HunspellConverter
                 {
                     if (item2.Class.Length > 0) continue;
 
-                    if (Utils.SimpleRegexMatchEnd(item1.Suffix, item2.Condition.RegexPattern))
+                    if (Utils.SimpleRegexMatchEnd(item1.Suffix, item2.Condition.Pattern))
                     {
                         var suffix = item1.Suffix;
 
@@ -471,7 +471,7 @@ public class HunspellConverter
 
                 var strip = sfx.Condition.Strip + item.Strip; if (strip.Length == 0) strip = "0";
 
-                var condition = item.Condition + sfx.Condition.RegexPattern; if (condition.Length == 0) condition = ".";
+                var condition = item.Condition + sfx.Condition.Pattern; if (condition.Length == 0) condition = ".";
 
                 sb.AppendLine($"SFX {sfx.FlagName} {strip} {item.Text} {condition}" + (morphIndex > 0 ? $" {morphIndex}" : ""));
             }

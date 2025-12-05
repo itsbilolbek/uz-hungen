@@ -3,7 +3,6 @@ using System.Text;
 
 namespace UzHunGen.Converter;
 
-
 // Qo'shimchani berishdagi shartlar
 public record AffixCondition
 {
@@ -16,23 +15,23 @@ public record AffixCondition
     }
 
     public ConditionType Type { get; set; } = ConditionType.EndsWith;
-    public string RegexPattern { get; set; } = "";
+    public string Pattern { get; set; } = "";
     public string Strip { get; set; } = "";
 
-    public bool UseRegex => !string.IsNullOrEmpty(RegexPattern);
+    public bool UseRegex => !string.IsNullOrEmpty(Pattern);
 }
 
 // Qo'shimchani saqlash uchun
 public record SuffixElement
 {
-    public int Id { get; set; } = 0;
-    public string Name { get; set; } = "";
-    public string SetName { get; set; } = "";
-    public string Suffix { get; set; } = "";
-    public string MorphCode { get; set; } = "";
-    public string Class { get; set; } = "";
-    public bool OnlyRoot { get; set; }
-    public AffixCondition Condition { get; set; } = new();
+    public int Id { get; init; }
+    public string Name { get; init; } = "";
+    public string SetName { get; init; } = "";
+    public string Suffix { get; init; } = "";
+    public string MorphCode { get; init; } = "";
+    public string Class { get; init; } = "";
+    public bool OnlyRoot { get; init; }
+    public AffixCondition Condition { get; init; } = new();
 }
 
 // Qo'shimchalar to'plami
@@ -117,7 +116,7 @@ public class RuleParser
             }
             else
             {
-                throw new InvalidOperationException($"SFX, PFX yoki TAG berilishi kerak, biroq {CurrentToken.Type} berilgan, qator nomeri => {CurrentToken.Line}:{CurrentToken.Column}");
+                throw new InvalidOperationException($"SFX yoki TAG berilishi kerak, biroq {CurrentToken.Type} berilgan, qator nomeri => {CurrentToken.Line}:{CurrentToken.Column}");
             }
         }
 
@@ -185,21 +184,18 @@ public class RuleParser
 
                 Consume(TokenType.ENDSWITH);
 
-                condition = new AffixCondition();
-                
-                condition.Type = AffixCondition.ConditionType.EndsWith;
-
-                condition.RegexPattern = Consume(TokenType.STRING).Value;
+                condition = new AffixCondition()
+                {
+                    Type = AffixCondition.ConditionType.EndsWith,
+                    Pattern = Consume(TokenType.STRING).Value
+                };
 
                 // STRIP majburiy emas
                 if (CurrentToken.Type == TokenType.STRIP)
                 {
                     Consume(TokenType.STRIP);
 
-                    if (CurrentToken.Type == TokenType.STRING)
-                        condition.Strip = Consume(TokenType.STRING).Value;
-                    else
-                        condition.Strip = condition.RegexPattern;
+                    condition.Strip = ConsumeOptional(TokenType.STRING, condition.Pattern);
                 }
                 
                 Consume(TokenType.RBRACKET);
@@ -286,7 +282,7 @@ public class RuleParser
                     Consume(TokenType.ENDSWITH);
 
                     condition.Type = AffixCondition.ConditionType.EndsWith;
-                    condition.RegexPattern = Consume(TokenType.STRING).Value;
+                    condition.Pattern = Consume(TokenType.STRING).Value;
                 }
 
                 // STRIP majburiy emas
@@ -294,10 +290,7 @@ public class RuleParser
                 {
                     Consume(TokenType.STRIP);
 
-                    if (CurrentToken.Type == TokenType.STRING)
-                        condition.Strip = Consume(TokenType.STRING).Value;
-                    else
-                        condition.Strip = condition.RegexPattern;
+                    condition.Strip = ConsumeOptional(TokenType.STRING, condition.Pattern);
                 }
 
                 Consume(TokenType.RBRACKET);
@@ -463,4 +456,13 @@ public class RuleParser
 
         throw new InvalidOperationException($"{expectedType} berilishi kerak, biroq {current.Type} berilgan, qator nomeri => {current.Line}:{current.Column}");
     }
+
+    private string ConsumeOptional(TokenType expectedType, string defValue = "")
+    {
+        if (CurrentToken.Type == expectedType)
+            return Consume(expectedType).Value;
+
+        return defValue;
+    }
+
 }
