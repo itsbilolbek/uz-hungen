@@ -52,7 +52,7 @@ public class Utils
 
     public static bool SimpleRegexMatchEnd(string text, string condition)
     {
-        if (condition == ".") return true;
+        if (condition.Length == 0) return true;
 
         var length = SimpleRegexLength(condition);
 
@@ -66,8 +66,6 @@ public class Utils
 
     private static bool SimpleRegexMatch(string text, string condition)
     {
-        if (condition == ".") return true;
-
         var posText = 0;
         var posPattern = 0;
         var negate = false;

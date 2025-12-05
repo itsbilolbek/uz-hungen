@@ -18,6 +18,8 @@ public record SFXFlag
     public string ClassName { get; init; } = "";
     public string MorphCode { get; init; } = "";
     public bool OnlyRoot { get; init; } = false;
+    public AffixCondition Condition { get; init; } = new();
+
     public List<SFXFlagItem> Lines { get; init; } = [];
 }
 
@@ -168,7 +170,7 @@ public class HunspellConverter
         }
     }
 
-    
+
     // SFX flaglarni yaratish
     private List<SFXFlag> CreateSFXFlags()
     {
@@ -190,8 +192,9 @@ public class HunspellConverter
 
                 foreach (var suffix in tagItem.Suffixes)
                 {
-                    result = JoinSuffixSets(result, _grammar.Suffixes[suffix]);
+                    result = JoinSuffixSets(result, _grammar.Suffixes[suffix], tagItem.Condition);
                 }
+
 
                 lastId = 0;
 
@@ -212,7 +215,8 @@ public class HunspellConverter
                             SetName = item.SetName,
                             ClassName = item.Class,
                             MorphCode = item.MorphCode,
-                            OnlyRoot = item.OnlyRoot
+                            OnlyRoot = item.OnlyRoot,
+                            Condition = tagItem.Condition
                         };
 
                         lastId = item.Id;
@@ -221,8 +225,8 @@ public class HunspellConverter
                     sfx.Lines.Add(new SFXFlagItem()
                     {
                         Text = item.Suffix,
-                        Condition = item.Condition.RegexPattern.Length > 0 ? item.Condition.RegexPattern : ".",
-                        Strip = item.Condition.Strip.Length > 0 ? item.Condition.Strip : "0",
+                        Condition = item.Condition.RegexPattern,
+                        Strip = item.Condition.Strip,
                         MorphCode = item.MorphCode
                     });
                 }
@@ -236,7 +240,7 @@ public class HunspellConverter
     }
 
     // Ikkita to'plamdagi qo'shimchalarni biriktirish
-    public SuffixSet JoinSuffixSets(SuffixSet set1, SuffixSet set2)
+    public SuffixSet JoinSuffixSets(SuffixSet set1, SuffixSet set2, AffixCondition tagItemCondition)
     {
         var result = new SuffixSet();
 
@@ -246,17 +250,20 @@ public class HunspellConverter
 
         if (set1.Elements.Count <= 0)
         {
-            foreach (var item1 in set2.Elements)
+
+            foreach (var item2 in set2.Elements)
             {
                 //if (className.Length > 0 && !item1.Class.Equals(className)) continue;
 
-                if (item1.Id != lastId)
+                if (item2.Id != lastId)
                 {
-                    lastId = item1.Id;
+                    lastId = item2.Id;
                     _uniqueId++;
                 }
 
-                result.Elements.Add(item1 with { Id = _uniqueId });
+                var newItem = item2 with { Id = _uniqueId };
+
+                result.Elements.Add(newItem);
             }
         }
         else
@@ -278,13 +285,7 @@ public class HunspellConverter
                     {
                         var suffix = item1.Suffix;
 
-                        if (item2.Condition.Strip.Equals("!"))
-                        {
-                            var length = Utils.SimpleRegexLength(item2.Condition.RegexPattern);
-                            if (length > 0)
-                                suffix = suffix.Substring(0, suffix.Length - length);
-                        }
-                        else if (item2.Condition.Strip.Length > 0)
+                        if (item2.Condition.Strip.Length > 0)
                         {
                             suffix = suffix.Substring(0, suffix.Length - item2.Condition.Strip.Length);
                         }
@@ -455,9 +456,11 @@ public class HunspellConverter
         }
 
 
+        // SFX flaglarni faylga yozish
         foreach (var sfx in sfxList)
         {
             sb.AppendLine($"# {sfx.TagName}{sfx.ClassName}/{sfx.SetName}{sfx.ClassName}" + (sfx.MorphCode.Length > 0 && !sfx.MorphCode.Equals("_") ? " : " + sfx.MorphCode : ""));
+            
             sb.AppendLine($"SFX {sfx.FlagName} Y {sfx.Lines.Count}");
 
             foreach (var item in sfx.Lines)
@@ -466,7 +469,11 @@ public class HunspellConverter
 
                 if (_options.UseMorphCodes && morphList.ContainsKey(item.MorphCode)) morphIndex = morphList[item.MorphCode];
 
-                sb.AppendLine($"SFX {sfx.FlagName} {item.Strip} {item.Text} {item.Condition}" + (morphIndex > 0 ? $" {morphIndex}" : ""));
+                var strip = sfx.Condition.Strip + item.Strip; if (strip.Length == 0) strip = "0";
+
+                var condition = item.Condition + sfx.Condition.RegexPattern; if (condition.Length == 0) condition = ".";
+
+                sb.AppendLine($"SFX {sfx.FlagName} {strip} {item.Text} {condition}" + (morphIndex > 0 ? $" {morphIndex}" : ""));
             }
 
             sb.AppendLine();

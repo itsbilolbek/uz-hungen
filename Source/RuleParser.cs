@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Formats.Asn1;
+using System.Text;
 
 namespace UzHunGen.Converter;
 
@@ -15,7 +16,7 @@ public record AffixCondition
     }
 
     public ConditionType Type { get; set; } = ConditionType.EndsWith;
-    public string RegexPattern { get; set; } = ".";
+    public string RegexPattern { get; set; } = "";
     public string Strip { get; set; } = "";
 
     public bool UseRegex => !string.IsNullOrEmpty(RegexPattern);
@@ -50,6 +51,7 @@ public record TagElement
     public string MorphCode { get; init; } = "";
     public string Text { get; set; } = "";
     public List<string> Suffixes { get; init; } = [];
+    public AffixCondition Condition { get; set; } = new();
 }
 
 // Qoidani saqlash uchun
@@ -157,7 +159,6 @@ public class RuleParser
 
         while (CurrentToken.Type != TokenType.END && CurrentToken.Type != TokenType.EOF)
         {
-            a1:
 
             if (CurrentToken.Type == TokenType.LBRACKET)
             {
@@ -185,14 +186,19 @@ public class RuleParser
 
                     Consume(TokenType.RBRACKET);
                     Consume(TokenType.NEWLINE);
-                    goto a1;
+
+                    continue;
                 }
 
                 Consume(TokenType.ENDSWITH);
 
                 condition = new AffixCondition();
+                
                 condition.Type = AffixCondition.ConditionType.EndsWith;
+                
                 condition.RegexPattern = Consume(TokenType.STRING).Value;
+
+                if (condition.RegexPattern.Equals(".")) condition.RegexPattern = "";
 
                 // STRIP ni berish majburiy emas
                 if (CurrentToken.Type == TokenType.STRIP)
@@ -265,6 +271,7 @@ public class RuleParser
 
         var name = Consume(TokenType.IDENTIFIER).Value;
         var morph = name;
+        var autoStrip = "";
 
         // Qoida izohi
         if (CurrentToken.Type == TokenType.COLON)
@@ -273,13 +280,52 @@ public class RuleParser
             morph = Consume(TokenType.STRING).Value;
         }
 
+        if (CurrentToken.Type == TokenType.STRIP)
+        {
+            Consume(TokenType.STRIP);
+            autoStrip = Consume(TokenType.STRING).Value;
+        }
+
         Consume(TokenType.NEWLINE);
 
         var elements = new List<TagElement>();
 
+        var condition = new AffixCondition();
+
         while (CurrentToken.Type != TokenType.END && CurrentToken.Type != TokenType.EOF)
         {
-            var element = ParseTagElement();
+            if (CurrentToken.Type == TokenType.LBRACKET)
+            {
+                Consume(TokenType.LBRACKET);
+
+                condition = new AffixCondition();
+
+                // ENDSWITH majburiy emas
+                if (CurrentToken.Type == TokenType.ENDSWITH)
+                {
+                    Consume(TokenType.ENDSWITH);
+
+                    condition.Type = AffixCondition.ConditionType.EndsWith;
+                    condition.RegexPattern = Consume(TokenType.STRING).Value;
+                    if (condition.RegexPattern.Equals(".")) condition.RegexPattern = "";
+                }
+
+                // STRIP ni berish majburiy emas
+                if (CurrentToken.Type == TokenType.STRIP)
+                {
+                    Consume(TokenType.STRIP);
+
+                    if (CurrentToken.Type == TokenType.STRING)
+                        condition.Strip = Consume(TokenType.STRING).Value;
+                    else
+                        condition.Strip = condition.RegexPattern;
+                }
+
+                Consume(TokenType.RBRACKET);
+                Consume(TokenType.NEWLINE);
+            }
+
+            var element = ParseTagElement(condition);
 
             elements.AddRange(element);
 
@@ -297,7 +343,7 @@ public class RuleParser
         };
     }
 
-    private List<TagElement> ParseTagElement()
+    private List<TagElement> ParseTagElement(AffixCondition condition)
     {
         var name = Consume(TokenType.IDENTIFIER).Value;
         var morph = name;
@@ -399,6 +445,8 @@ public class RuleParser
                 if (line.Length > 0) line.Length = line.Length - 1;
 
                 tag.Text = line.ToString();
+
+                tag.Condition = condition;
 
                 if (line.Length > 0) elements.Add(tag);
 
