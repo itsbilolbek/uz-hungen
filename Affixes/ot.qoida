@@ -161,8 +161,6 @@ SFX OT.SIFAT("SF")
     
 END SFX
 
-# ===== OT so'z turkumi uchun qoidalar ===== 
-
 TAG OT 
 
     _ = [OT.KICHRAYTMA] + [OT.KO'PLIK] + [OT.EGALIK] + [OT.KELISHIK] + [OT.YUKLAMA]         # kitob + cha + lar + imiz + dan + mi?
@@ -171,5 +169,4 @@ TAG OT
     _ = [OT.KO'PLIK] + OT.SHAXS + [OT.YUKLAMA]                                              # odam + lar + miz + mi?
     _ = [OT.KO'PLIK] + [OT.EGALIK] + OT.YUKLAMA.GT                                          # do'st + lar + im + midingiz
     
-
 END TAG

@@ -1,7 +1,4 @@
-﻿# =============================================================
-# SON so'z turkumi uchun qoidalar
-# =============================================================
-SFX SON.TARTIB("TT")
+﻿SFX SON.TARTIB("TT")
     
     [ENDSWITH "[aeiou]"]
     TRT = "nchi" 

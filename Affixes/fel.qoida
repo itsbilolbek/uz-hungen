@@ -1,6 +1,4 @@
-﻿# ===== Zamon qo'shimchalari ===== 
-#
-SFX FL.ZAMON1("ZM")
+﻿SFX FL.ZAMON1("ZM")
     
     O'T = "gan" 
     HOZ = "yap" 
@@ -26,8 +24,6 @@ SFX FL.ZAMON2("ZM")
 
 END SFX
 
-# ===== Kishiik qo'shimchalari ===== 
-#
 SFX FL.KISHILIK("KSH")
     
     1SHB = "man"
@@ -41,8 +37,6 @@ SFX FL.KISHILIK("KSH")
 
 END SFX
 
-# ===== Bo'lishsiz fe'l qo'shimchasi ===== 
-#
 SFX FL.BO'LISHSIZ("BSH")
     
     "ma"
@@ -85,8 +79,6 @@ SFX F1.LIK("SF")
     "lik" 
     
 END SFX
-
-# ===== FE'L so'z turkumi uchun qoidalar ===== 
 
 TAG FL
 
