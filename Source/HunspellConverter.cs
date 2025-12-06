@@ -457,6 +457,9 @@ public class HunspellConverter
 
 
         // SFX flaglarni faylga yozish
+        // SFX <flag> Y <count>
+        // SFX <flag> <strip> <suffix> <condition> <morphcode>
+        // SFX <flag> <strip> <suffix> <condition> <morphcode>
         foreach (var sfx in sfxList)
         {
             sb.AppendLine($"# {sfx.TagName}{sfx.ClassName}/{sfx.SetName}{sfx.ClassName}" + (sfx.MorphCode.Length > 0 && !sfx.MorphCode.Equals("_") ? " : " + sfx.MorphCode : ""));

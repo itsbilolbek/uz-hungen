@@ -123,6 +123,7 @@ public class RuleParser
     }
 
 
+    // SFX blokini parsing qilish
     private SuffixSet ParseSuffixSet()
     {
         Consume(TokenType.SFX);
@@ -231,6 +232,9 @@ public class RuleParser
         };
     }
 
+
+    // SFX ichidagi bitta qatorni parsing qilish
+    // <NAME> = <SUFFIX_TEXT>
     private SuffixElement ParseSuffixElement()
     {
         var name = ConsumeOptional(TokenType.IDENTIFIER, "");
@@ -261,6 +265,7 @@ public class RuleParser
         };
     }
 
+    // TAG blokini parsing qilish
     private TagSet ParseTagSet()
     {
         Consume(TokenType.TAG);
@@ -325,6 +330,8 @@ public class RuleParser
         };
     }
 
+    // TAG ichidagi bitta qatorni parsing qilish
+    // <NAME> = <SuffixSet1> + <SuffixSet2> + ...
     private List<TagElement> ParseTagElement(AffixCondition condition)
     {
         var name = Consume(TokenType.IDENTIFIER).Value;
@@ -462,6 +469,7 @@ public class RuleParser
         return elements;
     }
 
+    /*
     private bool MatchToken(params TokenType[] types)
     {
         var currentType = CurrentToken.Type;
@@ -472,6 +480,7 @@ public class RuleParser
         }
         return false;
     }
+    */
 
     private Token Consume(TokenType expectedType, bool needNewLine = false)
     {
