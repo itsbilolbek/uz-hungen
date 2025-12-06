@@ -14,7 +14,6 @@ public class AppSettings
     public bool Use2FoldRefs { get; set; }
     public bool UseMorphCodes { get; set; }
     public bool UseSingleDic { get; set; }
-    public FlagType FlagType { get; set; } = FlagType.Long;
     public bool ShowHelp { get; set; }
     public bool ShowGrammar { get; set; }
     public List<string> RuleFiles { get; set; } = [];

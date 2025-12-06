@@ -22,11 +22,11 @@ public class Utils
     public static string CreateLongFlag(int num)
     {
         // 52*52 gacha (AA-zz)
-        if (num < 0 || num > 2704)
+        if (num < 1 || num > 2705)
         {
             throw new ArgumentOutOfRangeException(
                 nameof(num),
-                $"Qiymat {nameof(num)} 0 dan {char.MaxValue} gacha bo'lishi kerak."
+                $"Qiymat {nameof(num)} 1 dan {char.MaxValue} gacha bo'lishi kerak."
             );
         }
         var length = ValidLetters.Length;

@@ -17,9 +17,8 @@ public record SFXFlag
     public string FlagName { get; init; } = "";
     public string ClassName { get; init; } = "";
     public string MorphCode { get; init; } = "";
-    public bool OnlyRoot { get; init; } = false;
+    public bool OnlyRoot { get; init; }
     public AffixCondition Condition { get; init; } = new();
-
     public List<SFXFlagItem> Lines { get; init; } = [];
 }
 
@@ -60,8 +59,6 @@ public class HunspellConverter
         AddDictionaryFiles(_options.DictionaryFiles);
 
         ValidateTagReferences(_grammar);
-
-        PrintGrammar();
     }
 
     private void AddRuleFile(string file)
@@ -86,7 +83,7 @@ public class HunspellConverter
             _grammar.Tags[key] = value;
         }
 
-        Console.WriteLine($"- Qoidalar fayli yuklandi: {file}");
+        Console.WriteLine($"- Qoidalar yuklandi: {file}");
     }
 
     private void AddRuleFiles(List<string> files)
@@ -120,7 +117,7 @@ public class HunspellConverter
 
         _grammar.Words.Add(wordSet);
 
-        Console.WriteLine($"- Lug'atlar fayli yuklandi: {file}");
+        Console.WriteLine($"- Lug'atlar yuklandi: {file}");
     }
 
     private void AddDictionaryFiles(List<string> files)
@@ -178,7 +175,7 @@ public class HunspellConverter
     {
         var lastId = 0;
 
-        var flag = 0;
+        var flag = 1; // 0 - NOSUGGEST uchun ajratilgan
 
         var list = new List<SFXFlag>();
 
@@ -423,13 +420,18 @@ public class HunspellConverter
 
         var sb = new StringBuilder();
 
+        // AFF fayl sozlamalari
         sb.AppendLine("LANG uz_UZ");
         sb.AppendLine("SET UTF-8");
         sb.AppendLine("FLAG long");
         sb.AppendLine("TRY - abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZʻʼ");
         sb.AppendLine("KEY qwertyuiop|asdfghjkl|zxcvbnm");
         sb.AppendLine("WORDCHARS -.'ʻʼ‘’");
+        sb.AppendLine("NOSUGGEST AA");
         sb.AppendLine();
+
+        // NOSUGGEST alias flagini
+        afList.Add("NOSUGGEST", new AliasFlag() { AliasIndex = afList.Count + 1, TextFlags = "AA", TagName = "NOSUGGEST" });
 
         // Alias larni faylga yozish
         // AF <count>
@@ -440,8 +442,6 @@ public class HunspellConverter
         foreach (var (key, entry) in afList)
         {
             sb.AppendLine($"AF {entry.TextFlags} # {entry.AliasIndex} {entry.TagName}");
-
-            if (_options.ShowGrammar) Console.WriteLine(entry.AliasIndex + ": " + entry.TagName + " = " + entry.TextFlags);
         }
         sb.AppendLine();
 
@@ -488,6 +488,8 @@ public class HunspellConverter
         }
 
         File.WriteAllText(filePath, sb.ToString());
+
+        Console.WriteLine("- AFF fayl yaratildi: " + filePath);
 
     }
 
@@ -540,6 +542,8 @@ public class HunspellConverter
 
                     File.WriteAllText(filePath, sb.ToString());
 
+                    Console.WriteLine("- DIC fayl yaratildi: " + filePath);
+
                     sb = new StringBuilder();
 
                     count = 0;
@@ -554,6 +558,8 @@ public class HunspellConverter
             sb.Insert(0, count + "\n");
 
             File.WriteAllText(filePath, sb.ToString());
+
+            Console.WriteLine("- DIC fayl yaratildi: " + filePath);
         }
     }
 
@@ -564,6 +570,8 @@ public class HunspellConverter
         var afList = CreateAliasFlags(sfxList);
 
         var morphList = CreateMorphAliases(sfxList);
+
+        PrintGrammar();
 
         WriteToAFFFile(sfxList, afList, morphList);
 
