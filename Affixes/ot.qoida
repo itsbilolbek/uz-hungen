@@ -1,8 +1,4 @@
-﻿SFX OT.KO'PLIK("K")             
-
-    _ = "lar" 
-    
-END SFX
+﻿SFX OT.KO'PLIK("K") "lar" END SFX
 
 SFX OT.EGALIK("EG")             
 
@@ -155,11 +151,7 @@ SFX OT.KICHRAYTMA("KCH")
 
 END SFX
 
-SFX OT.SIFAT("SF")
-    
-    _ = "li"
-    
-END SFX
+SFX OT.SIFAT("SF") "li" END SFX
 
 TAG OT 
 
