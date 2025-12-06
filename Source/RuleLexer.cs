@@ -5,10 +5,10 @@ namespace UzHunGen.Converter;
 public enum TokenType
 {
     SFX, PFX, TAG, END, CLASS, ONLYROOT,
-    ENDSWITH, STARTSWITH, STRIP, NOT, 
+    ENDSWITH, STARTSWITH, STRIP, 
     IDENTIFIER, STRING, NUMBER,
     LBRACE, RBRACE, LBRACKET, RBRACKET, LPAREN, RPAREN, 
-    COMMA, COLON, PLUS, EQUAL, 
+    COMMA, PLUS, EQUAL, 
     NEWLINE, EOF
 }
 
@@ -51,13 +51,12 @@ public class RuleLexer
         ['('] = TokenType.LPAREN,
         [')'] = TokenType.RPAREN,
         [','] = TokenType.COMMA,
-        [':'] = TokenType.COLON,
         ['+'] = TokenType.PLUS,
         ['='] = TokenType.EQUAL
     };
 
     // Identifikator nomida ishlatish mumkin bo'lgan belgimi?
-    private static bool IsValidIdentifierSymbol(char c) => char.IsLetterOrDigit(c) || "-_‘’'?!.".Contains(c);
+    private static bool IsValidIdentifierSymbol(char c) => char.IsLetterOrDigit(c) || "-_‘’'?!:.".Contains(c);
 
     public RuleLexer(string input)
     {

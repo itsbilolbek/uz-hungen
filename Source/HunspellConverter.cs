@@ -490,6 +490,8 @@ public class HunspellConverter
 
         foreach (var word in _grammar.Words)
         {
+            if (string.IsNullOrEmpty(word.Word)) continue;
+
             if (word.Tag.Length > 0)
             {
                 var tags = word.Tag.Split("/");

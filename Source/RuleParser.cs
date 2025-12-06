@@ -27,7 +27,7 @@ public record SuffixElement
     public string Name { get; init; } = "";
     public string SetName { get; init; } = "";
     public string Suffix { get; init; } = "";
-    public string MorphCode { get; init; } = "";
+    public string MorphCode { get; set; } = "";
     public string Class { get; init; } = "";
     public bool OnlyRoot { get; init; }
     public AffixCondition Condition { get; init; } = new();
@@ -131,11 +131,13 @@ public class RuleParser
         var morph = name;
 
         // Morfologik kod
-        if (CurrentToken.Type == TokenType.COLON)
+        if (CurrentToken.Type == TokenType.LPAREN)
         {
-            Consume(TokenType.COLON);
+            Consume(TokenType.LPAREN);
 
             morph = Consume(TokenType.STRING).Value;
+
+            Consume(TokenType.RPAREN);
         }
 
         var elements = new List<SuffixElement>();
@@ -208,7 +210,12 @@ public class RuleParser
                 OnlyRoot = onlyRoot,
                 Class = className
             };
-            
+
+            if (element.MorphCode.Length == 0) 
+                element.MorphCode = morph;
+            else
+                element.MorphCode = morph + "." + element.MorphCode;
+
             elements.Add(element);
         }
 
@@ -226,18 +233,23 @@ public class RuleParser
 
     private SuffixElement ParseSuffixElement()
     {
-        var name = Consume(TokenType.IDENTIFIER).Value;
-        var morph = name;
+        var name = ConsumeOptional(TokenType.IDENTIFIER, "");
+        var morph = name.Equals("_") ? "": name;
 
-        // Morfologik kod
-        if (CurrentToken.Type == TokenType.COLON)
+        if (!string.IsNullOrEmpty(name))
         {
-            Consume(TokenType.COLON);
+            // Morfologik kod
+            if (CurrentToken.Type == TokenType.LPAREN)
+            {
+                Consume(TokenType.LPAREN);
 
-            morph = Consume(TokenType.STRING).Value;
+                morph = Consume(TokenType.STRING).Value;
+
+                Consume(TokenType.RPAREN);
+            }
+
+            Consume(TokenType.EQUAL);
         }
-
-        Consume(TokenType.EQUAL);
 
         var suffix = Consume(TokenType.STRING).Value;
 
@@ -257,11 +269,13 @@ public class RuleParser
         var morph = name;
 
         // Morfologik kod
-        if (CurrentToken.Type == TokenType.COLON)
+        if (CurrentToken.Type == TokenType.LPAREN)
         {
-            Consume(TokenType.COLON);
+            Consume(TokenType.LPAREN);
 
             morph = Consume(TokenType.STRING).Value;
+
+            Consume(TokenType.RPAREN);
         }
 
         var elements = new List<TagElement>();
@@ -317,11 +331,13 @@ public class RuleParser
         var morph = name;
 
         // Morfologik kod
-        if (CurrentToken.Type == TokenType.COLON)
+        if (CurrentToken.Type == TokenType.LPAREN)
         {
-            Consume(TokenType.COLON);
+            Consume(TokenType.LPAREN);
 
             morph = Consume(TokenType.STRING).Value;
+
+            Consume(TokenType.RPAREN);
         }
 
         Consume(TokenType.EQUAL);
@@ -446,6 +462,17 @@ public class RuleParser
         return elements;
     }
 
+    private bool MatchToken(params TokenType[] types)
+    {
+        var currentType = CurrentToken.Type;
+        foreach (var type in types)
+        {
+            if (currentType == type)
+                return true;
+        }
+        return false;
+    }
+
     private Token Consume(TokenType expectedType, bool needNewLine = false)
     {
         var current = CurrentToken;
@@ -463,5 +490,6 @@ public class RuleParser
 
         return defValue;
     }
+
 
 }
