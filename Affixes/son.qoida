@@ -22,7 +22,6 @@ SFX SON.DONA("DN")
 
     [ENDSWITH "r" STRIP]
     _ = "tta"
-    
     [ENDSWITH "[^r]"]
     _ = "ta"
 

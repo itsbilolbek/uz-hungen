@@ -1,14 +1,29 @@
-﻿SFX OLM-KISHILIK("KSH")
+﻿SFX OL.KELISHIK("KL")
 	
 	[ENDSWITH "[aeiou]"]
-	_ = "nga"
+    TSH = "ni"
+    QRT = "ning"
+    O'P = "nda"
+    CHQ = "ndan"
+    O'PH = "ndagi"
+    O'PHD = "ndagidek"
+	JNL = "nga"
+    JNL = "ngacha"
+
 	[ENDSWITH "[^aeiou]"]
-	_ = "ga"
+    TSH = "ni"
+    QRT = "ning"
+    O'P = "da"
+    CHQ = "dan"
+    O'PH = "dagi"
+    O'PHD = "dagidek"
+	JNL = "ga"
+    JNL = "gacha"
 
 END SFX
 
-TAG OLMOSH-KR("KRS")
+TAG OLMOSH
 	
-	_ = OLM-KISHILIK
+	_ = OL.KELISHIK
 
 END TAG
